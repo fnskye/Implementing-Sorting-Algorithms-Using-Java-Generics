@@ -20,33 +20,6 @@ public class Sort {
         return moveCount;
     }
 
-    private static <T extends Comparable<T>> boolean isStrictlyBefore(T firstValue, T secondValue, boolean ascending) {
-        comparisonCount++;
-        if (ascending) {
-            return firstValue.compareTo(secondValue) < 0;
-        } else {
-            return firstValue.compareTo(secondValue) > 0;
-        }
-    }
-
-    private static <T extends Comparable<T>> boolean isStrictlyAfter(T firstValue, T secondValue, boolean ascending) {
-        comparisonCount++;
-        if (ascending) {
-            return firstValue.compareTo(secondValue) > 0;
-        } else {
-            return firstValue.compareTo(secondValue) < 0;
-        }
-    }
-
-    private static <T extends Comparable<T>> boolean isBeforeOrEqual(T firstValue, T secondValue, boolean ascending) {
-        comparisonCount++;
-        if (ascending) {
-            return firstValue.compareTo(secondValue) <= 0;
-        } else {
-            return firstValue.compareTo(secondValue) >= 0;
-        }
-    }
-
     public static <T> String listToString(T[] values) {
         return listToString(values, 0, values.length - 1);
     }
@@ -63,9 +36,8 @@ public class Sort {
     }
 
     private static <T> void swapElements(T[] values, int firstIndex, int secondIndex) {
-        if (firstIndex == secondIndex) {
+        if (firstIndex == secondIndex)
             return;
-        }
         T temporary = values[firstIndex];
         values[firstIndex] = values[secondIndex];
         moveCount++;
@@ -74,168 +46,172 @@ public class Sort {
     }
 
     // Insertion Sort
-    public static <T extends Comparable<T>> void insertionSort(T[] values, boolean ascending) {
-        SortRecorder.capture(values, "Starting array");
+    public static <T extends Comparable<T>> void insertionSort(T[] arr, boolean ascending) {
+        SortRecorder.capture(arr, "Starting array");
 
-        for (int nextIndex = 1; nextIndex < values.length; nextIndex++) {
-            T key = values[nextIndex];
-            int shiftIndex = nextIndex - 1;
+        for (int i = 1; i < arr.length; i++) {
+            T key = arr[i];
+            int j = i - 1;
 
-            while (shiftIndex >= 0 && isStrictlyAfter(values[shiftIndex], key, ascending)) {
-                values[shiftIndex + 1] = values[shiftIndex];
-                moveCount++;
-                shiftIndex--;
+            if (ascending) {
+                while (j >= 0 && arr[j].compareTo(key) > 0) {
+                    comparisonCount++;
+                    arr[j + 1] = arr[j];
+                    moveCount++;
+                    j--;
+                }
+                if (j >= 0)
+                    comparisonCount++; // Count final failed check
+            } else {
+                while (j >= 0 && arr[j].compareTo(key) < 0) {
+                    comparisonCount++;
+                    arr[j + 1] = arr[j];
+                    moveCount++;
+                    j--;
+                }
+                if (j >= 0)
+                    comparisonCount++;
             }
 
-            values[shiftIndex + 1] = key;
+            arr[j + 1] = key;
             moveCount++;
 
-            SortRecorder.markPlaced(shiftIndex + 1);
-            SortRecorder.markSortedPrefix(nextIndex);
-            SortRecorder.capture(values, "Inserted " + key + " into the sorted part");
+            SortRecorder.markPlaced(j + 1);
+            SortRecorder.markSortedPrefix(i);
+            SortRecorder.capture(arr, "Inserted " + key + " into the sorted part");
         }
-        SortRecorder.markSortedPrefix(values.length - 1);
-        SortRecorder.capture(values, "Sort complete.");
+
+        SortRecorder.markSortedPrefix(arr.length - 1);
+        SortRecorder.capture(arr, "Sort complete!");
     }
 
-    // Selection Sort
-    public static <T extends Comparable<T>> void selectionSort(T[] values, boolean ascending) {
-        SortRecorder.capture(values, "Starting array");
+    // Selection Sort (Antivo)
+    public static <T extends Comparable<T>> void selectionSort(T[] arr, boolean ascending) {
+        SortRecorder.capture(arr, "Starting array");
+        int n = arr.length;
 
-        for (int position = 0; position < values.length - 1; position++) {
-            int bestIndex = position;
+        for (int i = 0; i < n - 1; i++) {
+            int selectedIndex = i;
 
-            for (int candidateIndex = position + 1; candidateIndex < values.length; candidateIndex++) {
-                if (isStrictlyAfter(values[bestIndex], values[candidateIndex], ascending)) {
-                    bestIndex = candidateIndex;
+            for (int j = i + 1; j < n; j++) {
+                comparisonCount++;
+                if (ascending) {
+                    if (arr[j].compareTo(arr[selectedIndex]) < 0) {
+                        selectedIndex = j;
+                    }
+                } else {
+                    if (arr[j].compareTo(arr[selectedIndex]) > 0) {
+                        selectedIndex = j;
+                    }
                 }
             }
 
-            if (bestIndex != position) {
-                SortRecorder.markPair(position, bestIndex);
-                T bestValue = values[bestIndex];
-                swapElements(values, position, bestIndex);
-                SortRecorder.markSortedPrefix(position);
-                SortRecorder.capture(values, "Moved " + bestValue + " into position " + position);
+            if (selectedIndex != i) {
+                SortRecorder.markPair(i, selectedIndex);
+                swapElements(arr, i, selectedIndex);
+                SortRecorder.markSortedPrefix(i);
+                SortRecorder.capture(arr, "Moved " + arr[i] + " into position " + i);
             } else {
-                SortRecorder.markPlaced(position);
-                SortRecorder.markSortedPrefix(position);
-                SortRecorder.capture(values, values[position] + " is already in position " + position);
+                SortRecorder.markPlaced(i);
+                SortRecorder.markSortedPrefix(i);
+                SortRecorder.capture(arr, arr[i] + " is already in position " + i);
             }
         }
-        SortRecorder.markSortedPrefix(values.length - 1);
-        SortRecorder.capture(values, "Sort complete.");
+
+        SortRecorder.markSortedPrefix(arr.length - 1);
+        SortRecorder.capture(arr, "Sort complete!");
     }
 
-    // Merge Sort
-    public static <T extends Comparable<T>> void mergeSort(T[] values, boolean ascending) {
-        SortRecorder.capture(values, "Starting array");
-        mergeSort(values, 0, values.length - 1, ascending);
-        SortRecorder.markSortedPrefix(values.length - 1);
-        SortRecorder.capture(values, "Sort complete!");
+    // Merge Sort (Timmalog)
+    public static <T extends Comparable<T>> void mergeSort(T[] arr, boolean ascending) {
+        SortRecorder.capture(arr, "Starting array");
+        mergeSortRecursive(arr, 0, arr.length - 1, ascending);
+        SortRecorder.markSortedPrefix(arr.length - 1);
+        SortRecorder.capture(arr, "Sort complete!");
     }
 
-    private static <T extends Comparable<T>> void mergeSort(T[] values, int low, int high, boolean ascending) {
-        if (low >= high) {
-            return;
+    private static <T extends Comparable<T>> void mergeSortRecursive(T[] arr, int low, int high, boolean ascending) {
+        if (low < high) {
+            int mid = low + (high - low) / 2;
+
+            SortRecorder.markRegion(low, high);
+            SortRecorder.capture(arr, "Splitting range " + low + ".." + high + " at middle " + mid);
+
+            mergeSortRecursive(arr, low, mid, ascending);
+            mergeSortRecursive(arr, mid + 1, high, ascending);
+
+            merge(arr, low, mid, high, ascending);
+
+            SortRecorder.markRegion(low, high);
+            SortRecorder.capture(arr, "Merged range " + low + ".." + high);
         }
-
-        int middle = (low + high) / 2;
-
-        SortRecorder.markRegion(low, high);
-        SortRecorder.capture(values, "Splitting range " + low + ".." + high + " at middle " + middle);
-
-        mergeSort(values, low, middle, ascending);
-        mergeSort(values, middle + 1, high, ascending);
-
-        mergeHalves(values, low, middle, high, ascending);
-
-        SortRecorder.markRegion(low, high);
-        SortRecorder.capture(values, "Merged range " + low + ".." + high);
     }
 
-    private static <T extends Comparable<T>> void mergeHalves(T[] values, int low, int middle, int high,
-            boolean ascending) {
-        T[] leftHalf = Arrays.copyOfRange(values, low, middle + 1);
-        T[] rightHalf = Arrays.copyOfRange(values, middle + 1, high + 1);
+    private static <T extends Comparable<T>> void merge(T[] arr, int low, int mid, int high, boolean ascending) {
+        T[] leftHalf = Arrays.copyOfRange(arr, low, mid + 1);
+        T[] rightHalf = Arrays.copyOfRange(arr, mid + 1, high + 1);
 
-        int leftIndex = 0;
-        int rightIndex = 0;
-        int targetIndex = low;
+        int i = 0, j = 0, k = low;
 
-        while (leftIndex < leftHalf.length && rightIndex < rightHalf.length) {
-            if (isBeforeOrEqual(leftHalf[leftIndex], rightHalf[rightIndex], ascending)) {
-                values[targetIndex] = leftHalf[leftIndex];
-                leftIndex++;
+        while (i < leftHalf.length && j < rightHalf.length) {
+            comparisonCount++;
+            boolean condition = ascending ? leftHalf[i].compareTo(rightHalf[j]) <= 0
+                    : leftHalf[i].compareTo(rightHalf[j]) >= 0;
+
+            if (condition) {
+                arr[k++] = leftHalf[i++];
             } else {
-                values[targetIndex] = rightHalf[rightIndex];
-                rightIndex++;
+                arr[k++] = rightHalf[j++];
             }
             moveCount++;
-            targetIndex++;
         }
 
-        while (leftIndex < leftHalf.length) {
-            values[targetIndex] = leftHalf[leftIndex];
-            leftIndex++;
+        while (i < leftHalf.length) {
+            arr[k++] = leftHalf[i++];
             moveCount++;
-            targetIndex++;
         }
-
-        while (rightIndex < rightHalf.length) {
-            values[targetIndex] = rightHalf[rightIndex];
-            rightIndex++;
+        while (j < rightHalf.length) {
+            arr[k++] = rightHalf[j++];
             moveCount++;
-            targetIndex++;
         }
     }
 
-    // Quick Sort
-    public static <T extends Comparable<T>> void quickSort(T[] values, boolean ascending) {
-        SortRecorder.capture(values, "Starting array");
-        quickSortRange(values, 0, values.length - 1, ascending);
-        SortRecorder.markSortedPrefix(values.length - 1);
-        SortRecorder.capture(values, "Sort complete!");
+    // Quick Sort (Ambas)
+    public static <T extends Comparable<T>> void quickSort(T[] a, boolean ascending) {
+        SortRecorder.capture(a, "Starting array");
+        quickSortRecursive(a, 0, a.length - 1, ascending);
+        SortRecorder.markSortedPrefix(a.length - 1);
+        SortRecorder.capture(a, "Sort complete!");
     }
 
-    private static <T extends Comparable<T>> void quickSortRange(T[] values, int low, int high, boolean ascending) {
-        if (low >= high) {
-            if (low == high) {
-                SortRecorder.markFinal(low);
-                SortRecorder.capture(values, "Single element locked at index " + low);
+    private static <T extends Comparable<T>> void quickSortRecursive(T[] a, int low, int high, boolean ascending) {
+        if (low < high) {
+            // Pivot randomization to prevent O(n^2) worst-case on ordered sample sets
+            int randomIndex = low + PIVOT_RANDOM.nextInt(high - low + 1);
+            swapElements(a, randomIndex, high);
+
+            T pivot = a[high];
+            SortRecorder.markRegion(low, high);
+            SortRecorder.capture(a, "Partitioning range " + low + ".." + high + " around pivot " + pivot);
+
+            int i = low - 1;
+            for (int j = low; j < high; j++) {
+                comparisonCount++;
+                if (ascending ? a[j].compareTo(pivot) <= 0 : a[j].compareTo(pivot) >= 0) {
+                    i++;
+                    swapElements(a, i, j);
+                }
             }
-            return;
+            swapElements(a, i + 1, high);
+
+            SortRecorder.markFinal(i + 1);
+            SortRecorder.capture(a, "Pivot " + pivot + " locked into final place at index " + (i + 1));
+
+            quickSortRecursive(a, low, i, ascending);
+            quickSortRecursive(a, i + 2, high, ascending);
+        } else if (low == high) {
+            SortRecorder.markFinal(low);
+            SortRecorder.capture(a, "Single element locked at index " + low);
         }
-
-        int randomIndex = low + PIVOT_RANDOM.nextInt(high - low + 1);
-        swapElements(values, randomIndex, high);
-
-        T pivot = values[high];
-
-        SortRecorder.markRegion(low, high);
-        SortRecorder.capture(values, "Partitioning range " + low + ".." + high + " around pivot " + pivot);
-
-        int pivotIndex = partition(values, low, high, ascending);
-
-        SortRecorder.markFinal(pivotIndex);
-        SortRecorder.capture(values, "Pivot " + pivot + " locked into final place at index " + pivotIndex);
-
-        quickSortRange(values, low, pivotIndex - 1, ascending);
-        quickSortRange(values, pivotIndex + 1, high, ascending);
-    }
-
-    private static <T extends Comparable<T>> int partition(T[] values, int low, int high, boolean ascending) {
-        T pivot = values[high];
-        int lastSmallerIndex = low - 1;
-
-        for (int candidateIndex = low; candidateIndex < high; candidateIndex++) {
-            if (isStrictlyBefore(values[candidateIndex], pivot, ascending)) {
-                lastSmallerIndex++;
-                swapElements(values, lastSmallerIndex, candidateIndex);
-            }
-        }
-
-        swapElements(values, lastSmallerIndex + 1, high);
-        return lastSmallerIndex + 1;
     }
 }
